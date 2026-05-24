@@ -134,7 +134,7 @@ export default function Debts() {
     <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex-1">
           <h1 className="text-3xl font-bold tracking-tight">Deudas</h1>
           <p className="text-sm text-muted-foreground mt-1">Gestiona tus deudas personales</p>
         </div>
