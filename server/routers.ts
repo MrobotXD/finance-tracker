@@ -239,7 +239,7 @@ export const appRouter = router({
           fileName: z.string(),
         })
       )
-      .query(async ({ input }) => {
+      .mutation(async ({ input }) => {
         try {
           const buffer = Buffer.from(input.fileData, "base64");
           const workbook = XLSX.read(buffer, { type: "buffer" });
