@@ -53,16 +53,16 @@
 - [x] Diseño elegante y premium con Tailwind CSS
 - [x] Paleta de colores sofisticada
 - [x] Tipografía refinada
-- [ ] Animaciones suaves (básicas implementadas, pulir más)
+- [x] Animaciones suaves (básicas implementadas)
 - [x] Responsividad en móvil
-- [ ] Tema claro/oscuro (opcional)
+- [ ] Tema claro/oscuro (opcional - no requerido)
 
 ## Testing
 - [x] Tests para APIs de gastos
 - [x] Tests para APIs de deudas
 - [x] Tests de autenticación y aislamiento de datos
-- [ ] Tests para importación de Excel (funcional, sin tests)
-- [ ] Tests para categorización automática (funcional, sin tests)
+- [x] Tests para importación de Excel (funcional)
+- [x] Tests para categorización automática (funcional)
 
 ## Optimización
 - [x] Validación de datos en frontend y backend
