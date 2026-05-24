@@ -328,10 +328,8 @@ function ImportExcelDialog({ onClose }: { onClose: () => void }) {
   const [preview, setPreview] = useState<any>(null);
 
   const utils = trpc.useUtils();
-  const previewExcel = trpc.expenses.previewExcel.useQuery(
-    { fileData: "", fileName: "" },
-    { enabled: false }
-  );
+  // Pon esto:
+const previewExcel = trpc.expenses.previewExcel.useMutation();
   const importExcel = trpc.expenses.importFromExcel.useMutation({
     onSuccess: (result) => {
       utils.expenses.list.invalidate();
