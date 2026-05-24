@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, gte, lte, desc, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, expenses, InsertExpense, debts, InsertDebt, categories, tags, expenseTags } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,162 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+// Expenses queries
+export async function getUserExpenses(userId: number, filters?: { startDate?: Date; endDate?: Date; categoryId?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions: any[] = [eq(expenses.userId, userId)];
+  
+  if (filters?.startDate) {
+    conditions.push(gte(expenses.date, filters.startDate));
+  }
+  if (filters?.endDate) {
+    conditions.push(lte(expenses.date, filters.endDate));
+  }
+  if (filters?.categoryId) {
+    conditions.push(eq(expenses.categoryId, filters.categoryId));
+  }
+
+  return db.select().from(expenses).where(and(...conditions)).orderBy(desc(expenses.date));
+}
+
+export async function createExpense(data: InsertExpense) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.insert(expenses).values(data);
+}
+
+export async function updateExpense(id: number, data: Partial<InsertExpense>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.update(expenses).set(data).where(eq(expenses.id, id));
+}
+
+export async function deleteExpense(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.delete(expenses).where(eq(expenses.id, id));
+}
+
+// Debts queries
+export async function getUserDebts(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(debts).where(eq(debts.userId, userId)).orderBy(desc(debts.dueDate));
+}
+
+export async function createDebt(data: InsertDebt) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.insert(debts).values(data);
+}
+
+export async function updateDebt(id: number, data: Partial<InsertDebt>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.update(debts).set(data).where(eq(debts.id, id));
+}
+
+export async function deleteDebt(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.delete(debts).where(eq(debts.id, id));
+}
+
+// Categories queries
+export async function getCategories() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(categories).orderBy(categories.name);
+}
+
+// Tags queries
+export async function getUserTags(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(tags).where(eq(tags.userId, userId)).orderBy(tags.name);
+}
+
+export async function createTag(userId: number, name: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.insert(tags).values({ userId, name });
+}
+
+// Expense tags queries
+export async function addExpenseTag(expenseId: number, tagId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.insert(expenseTags).values({ expenseId, tagId });
+}
+
+export async function removeExpenseTag(expenseId: number, tagId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.delete(expenseTags).where(
+    and(eq(expenseTags.expenseId, expenseId), eq(expenseTags.tagId, tagId))
+  );
+}
+
+// Get expense by ID
+export async function getExpenseById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(expenses).where(eq(expenses.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+// Get debt by ID
+export async function getDebtById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(debts).where(eq(debts.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+// Dashboard metrics
+export async function getExpenseMetrics(userId: number, startDate: Date, endDate: Date) {
+  const db = await getDb();
+  if (!db) return { totalExpenses: 0, expensesByCategory: [] };
+
+  const result = await db
+    .select({
+      categoryId: expenses.categoryId,
+      categoryName: categories.name,
+      total: expenses.amount,
+    })
+    .from(expenses)
+    .innerJoin(categories, eq(expenses.categoryId, categories.id))
+    .where(
+      and(
+        eq(expenses.userId, userId),
+        gte(expenses.date, startDate),
+        lte(expenses.date, endDate)
+      )
+    );
+
+  return result;
+}
