@@ -9,13 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Upload, Trash2, Edit2 } from "lucide-react";
+import { Plus, Upload, Trash2, Edit2, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Expenses() {
   const { isAuthenticated } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
   const [formData, setFormData] = useState({
     amount: "",
     categoryId: "",
@@ -75,6 +79,24 @@ export default function Expenses() {
 
   const getCategoryName = (categoryId: number) => {
     return categories?.find((c) => c.id === categoryId)?.name || "Sin categoría";
+  };
+
+  const filteredExpenses = (expenses || []).filter((expense: any) => {
+    const matchesSearch = (expense.description ?? "").toLowerCase().includes(searchText.toLowerCase());
+    const matchesCategory = !filterCategory || expense.categoryId === parseInt(filterCategory);
+    const expenseDate = new Date(expense.date);
+    const matchesStartDate = !filterStartDate || expenseDate >= new Date(filterStartDate);
+    const matchesEndDate = !filterEndDate || expenseDate <= new Date(filterEndDate);
+    return matchesSearch && matchesCategory && matchesStartDate && matchesEndDate;
+  });
+
+  const hasActiveFilters = searchText || filterCategory || filterStartDate || filterEndDate;
+
+  const clearFilters = () => {
+    setSearchText("");
+    setFilterCategory("");
+    setFilterStartDate("");
+    setFilterEndDate("");
   };
 
   if (!isAuthenticated) {
@@ -178,15 +200,75 @@ export default function Expenses() {
         </div>
       </div>
 
+      {/* Filters */}
+      <Card className="border-0 shadow-sm bg-gradient-to-br from-slate-50 to-slate-100">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Filtros</CardTitle>
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-2">
+                <X className="h-4 w-4" />
+                Limpiar filtros
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar descripción..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Category Filter */}
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todas las categorías" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todas las categorías</SelectItem>
+                {categories?.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id.toString()}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Start Date */}
+            <Input
+              type="date"
+              value={filterStartDate}
+              onChange={(e) => setFilterStartDate(e.target.value)}
+              placeholder="Desde"
+            />
+
+            {/* End Date */}
+            <Input
+              type="date"
+              value={filterEndDate}
+              onChange={(e) => setFilterEndDate(e.target.value)}
+              placeholder="Hasta"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Expenses Table */}
       <Card className="border-0 shadow-sm">
         <CardHeader>
-          <CardTitle>Historial de Gastos</CardTitle>
+          <CardTitle>Historial de Gastos ({filteredExpenses.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">Cargando gastos...</div>
-          ) : expenses && expenses.length > 0 ? (
+          ) : filteredExpenses.length > 0 ? (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -199,7 +281,7 @@ export default function Expenses() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {expenses.map((expense) => (
+                  {filteredExpenses.map((expense) => (
                     <TableRow key={expense.id}>
                       <TableCell className="text-sm">
                         {new Date(expense.date).toLocaleDateString("es-ES")}

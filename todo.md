@@ -33,8 +33,8 @@
 - [x] Componente de carga de archivo Excel
 - [x] Modal de previsualización de importación
 - [x] Tabla de transacciones con paginación
-- [ ] Filtros por fecha, categoría y tipo
-- [ ] Búsqueda por texto
+- [x] Filtros por fecha, categoría y tipo
+- [x] Búsqueda por texto
 - [x] Editar/eliminar gastos desde tabla
 
 ## Frontend - Gestión de Deudas
