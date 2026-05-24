@@ -493,9 +493,20 @@ function ImportExcelDialog({ onClose }: { onClose: () => void }) {
             </div>
           </div>
 
-            <Button onClick={handleImport} className="w-full" disabled={importExcel.isPending}>
-              {importExcel.isPending ? "Importando..." : "Importar Gastos"}
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleImport} className="flex-1" disabled={importExcel.isPending}>
+                {importExcel.isPending ? "Importando..." : "Importar Gastos"}
+              </Button>
+              <Button variant="outline" onClick={onClose} disabled={importExcel.isPending}>
+                Cancelar
+              </Button>
+            </div>
+        </div>
+      )}
+      
+      {!preview && file && (
+        <div className="text-center py-4 text-muted-foreground">
+          <p className="text-sm">Cargando vista previa...</p>
         </div>
       )}
     </div>
