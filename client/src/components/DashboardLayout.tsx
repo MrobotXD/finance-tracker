@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, Wallet, CreditCard } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, Wallet, CreditCard, Moon, Sun } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -222,6 +223,7 @@ function DashboardLayoutContent({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                <ThemeToggle />
                 <DropdownMenuItem
                   onClick={logout}
                   className="cursor-pointer text-destructive focus:text-destructive"
@@ -261,5 +263,27 @@ function DashboardLayoutContent({
         <main className="flex-1 p-4">{children}</main>
       </SidebarInset>
     </>
+  );
+}
+
+function ThemeToggle() {
+  const { theme, toggleTheme } = useTheme();
+  return (
+    <DropdownMenuItem
+      onClick={toggleTheme}
+      className="cursor-pointer"
+    >
+      {theme === "light" ? (
+        <>
+          <Moon className="mr-2 h-4 w-4" />
+          <span>Modo Oscuro</span>
+        </>
+      ) : (
+        <>
+          <Sun className="mr-2 h-4 w-4" />
+          <span>Modo Claro</span>
+        </>
+      )}
+    </DropdownMenuItem>
   );
 }

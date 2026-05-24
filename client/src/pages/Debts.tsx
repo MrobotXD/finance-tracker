@@ -20,7 +20,29 @@ export default function Debts() {
     amount: "",
     description: "",
     dueDate: "",
+    interestRate: "",
   });
+  const [totalWithInterest, setTotalWithInterest] = useState(0);
+
+  // Calculate total with interest
+  const calculateTotal = (amount: string, rate: string) => {
+    const amt = parseFloat(amount) || 0;
+    const rt = parseFloat(rate) || 0;
+    const total = amt + (amt * rt / 100);
+    setTotalWithInterest(total);
+  };
+
+  // Handle amount change and recalculate total
+  const handleAmountChange = (value: string) => {
+    setFormData({ ...formData, amount: value });
+    calculateTotal(value, formData.interestRate);
+  };
+
+  // Handle interest rate change and recalculate total
+  const handleInterestRateChange = (value: string) => {
+    setFormData({ ...formData, interestRate: value });
+    calculateTotal(formData.amount, value);
+  };
 
   const utils = trpc.useUtils();
   const { data: debts, isLoading } = trpc.debts.list.useQuery(undefined, { enabled: isAuthenticated });
@@ -29,7 +51,8 @@ export default function Debts() {
     onSuccess: () => {
       utils.debts.list.invalidate();
       utils.dashboard.metrics.invalidate();
-      setFormData({ creditorName: "", amount: "", description: "", dueDate: "" });
+      setFormData({ creditorName: "", amount: "", description: "", dueDate: "", interestRate: "" });
+      setTotalWithInterest(0);
       setIsDialogOpen(false);
       toast.success("Deuda registrada exitosamente");
     },
@@ -72,6 +95,7 @@ export default function Debts() {
       amount: parseFloat(formData.amount),
       description: formData.description,
       dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
+      interestRate: formData.interestRate ? parseFloat(formData.interestRate) : 0,
     });
   };
 
@@ -103,8 +127,8 @@ export default function Debts() {
     );
   }
 
-  const totalDebts = debts?.reduce((sum, debt) => sum + parseFloat(debt.amount as any), 0) || 0;
-  const pendingDebts = debts?.filter((d) => d.status === "pending").reduce((sum, debt) => sum + parseFloat(debt.amount as any), 0) || 0;
+  const totalDebts = debts?.reduce((sum, debt) => sum + parseFloat(debt.totalWithInterest as any || debt.amount as any), 0) || 0;
+  const pendingDebts = debts?.filter((d) => d.status === "pending").reduce((sum, debt) => sum + parseFloat(debt.totalWithInterest as any || debt.amount as any), 0) || 0;
 
   return (
     <div className="space-y-8">
@@ -144,7 +168,7 @@ export default function Debts() {
                   step="0.01"
                   placeholder="0.00"
                   value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  onChange={(e) => handleAmountChange(e.target.value)}
                 />
               </div>
 
@@ -156,6 +180,23 @@ export default function Debts() {
                   value={formData.dueDate}
                   onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="interestRate">Tasa de Interes (%)</Label>
+                <Input
+                  id="interestRate"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={formData.interestRate}
+                  onChange={(e) => handleInterestRateChange(e.target.value)}
+                />
+                {totalWithInterest > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Total con interes: {formatCurrency(totalWithInterest)}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -216,6 +257,8 @@ export default function Debts() {
                   <TableRow>
                     <TableHead>Acreedor</TableHead>
                     <TableHead>Monto</TableHead>
+                    <TableHead>Interes (%)</TableHead>
+                    <TableHead>Total</TableHead>
                     <TableHead>Vencimiento</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
@@ -226,6 +269,8 @@ export default function Debts() {
                     <TableRow key={debt.id}>
                       <TableCell className="text-sm font-medium">{debt.creditorName}</TableCell>
                       <TableCell className="text-sm">{formatCurrency(parseFloat(debt.amount as any))}</TableCell>
+                      <TableCell className="text-sm">{parseFloat(debt.interestRate as any || "0").toFixed(2)}%</TableCell>
+                      <TableCell className="text-sm font-semibold">{formatCurrency(parseFloat(debt.totalWithInterest as any || debt.amount as any))}</TableCell>
                       <TableCell className="text-sm">
                         {debt.dueDate ? new Date(debt.dueDate).toLocaleDateString("es-ES") : "-"}
                       </TableCell>

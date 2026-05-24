@@ -279,14 +279,22 @@ export const appRouter = router({
           amount: z.string().or(z.number()),
           description: z.string().optional(),
           dueDate: z.date().optional(),
+          interestRate: z.string().or(z.number()).optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
         const amount = typeof input.amount === "string" ? parseFloat(input.amount) : input.amount;
+        const interestRate = input.interestRate ? (typeof input.interestRate === "string" ? parseFloat(input.interestRate) : input.interestRate) : 0;
         
         if (isNaN(amount) || amount <= 0) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "El monto debe ser mayor a 0" });
         }
+
+        if (interestRate < 0 || interestRate > 100) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "La tasa de interés debe estar entre 0 y 100" });
+        }
+
+        const totalWithInterest = amount + (amount * interestRate / 100);
 
         return db.createDebt({
           userId: ctx.user.id,
@@ -294,6 +302,8 @@ export const appRouter = router({
           amount: amount.toString(),
           description: input.description,
           dueDate: input.dueDate,
+          interestRate: interestRate.toString(),
+          totalWithInterest: totalWithInterest.toString(),
           status: "pending",
         });
       }),
@@ -306,6 +316,7 @@ export const appRouter = router({
           amount: z.string().or(z.number()).optional(),
           description: z.string().optional(),
           dueDate: z.date().optional(),
+          interestRate: z.string().or(z.number()).optional(),
           status: z.enum(["pending", "paid", "overdue"]).optional(),
         })
       )
@@ -325,9 +336,21 @@ export const appRouter = router({
             throw new TRPCError({ code: "BAD_REQUEST", message: "El monto debe ser mayor a 0" });
           }
           updateData.amount = amount;
+          // Recalculate totalWithInterest when amount changes
+          const currentInterestRate = parseFloat(debt?.interestRate as any || "0");
+          updateData.totalWithInterest = amount + (amount * currentInterestRate / 100);
         }
         if (input.description !== undefined) updateData.description = input.description;
         if (input.dueDate !== undefined) updateData.dueDate = input.dueDate;
+        if (input.interestRate !== undefined) {
+          const interestRate = typeof input.interestRate === "string" ? parseFloat(input.interestRate) : input.interestRate;
+          if (interestRate < 0 || interestRate > 100) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "La tasa de interes debe estar entre 0 y 100" });
+          }
+          updateData.interestRate = interestRate;
+          const finalAmount = updateData.amount || (debt?.amount ? parseFloat(debt.amount as any) : 0);
+          updateData.totalWithInterest = finalAmount + (finalAmount * interestRate / 100);
+        }
         if (input.status !== undefined) updateData.status = input.status;
 
         return db.updateDebt(input.id, updateData);
@@ -379,8 +402,8 @@ export const appRouter = router({
 
         // Get debts
         const debts = await db.getUserDebts(ctx.user.id);
-        const totalDebts = debts.reduce((sum, debt) => sum + parseFloat(debt.amount as any), 0);
-        const pendingDebts = debts.filter(d => d.status === "pending").reduce((sum, debt) => sum + parseFloat(debt.amount as any), 0);
+        const totalDebts = debts.reduce((sum, debt) => sum + parseFloat(debt.totalWithInterest as any || debt.amount as any), 0);
+        const pendingDebts = debts.filter(d => d.status === "pending").reduce((sum, debt) => sum + parseFloat(debt.totalWithInterest as any || debt.amount as any), 0);
 
         // Get expenses by category
         const metrics = await db.getExpenseMetrics(ctx.user.id, startDate, endDate);

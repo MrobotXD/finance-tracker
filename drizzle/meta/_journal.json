@@ -15,6 +15,13 @@
       "when": 1779631716493,
       "tag": "0001_secret_rictor",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1779634252031,
+      "tag": "0002_equal_callisto",
+      "breakpoints": true
     }
   ]
 }

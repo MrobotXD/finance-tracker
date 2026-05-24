@@ -82,6 +82,8 @@ export const debts = mysqlTable("debts", {
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
   description: text("description"),
   dueDate: timestamp("dueDate"),
+  interestRate: decimal("interestRate", { precision: 5, scale: 2 }).default("0"),
+  totalWithInterest: decimal("totalWithInterest", { precision: 12, scale: 2 }),
   status: mysqlEnum("status", ["pending", "paid", "overdue"]).default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

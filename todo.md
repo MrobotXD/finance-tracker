@@ -55,7 +55,7 @@
 - [x] Tipografía refinada
 - [x] Animaciones suaves (básicas implementadas)
 - [x] Responsividad en móvil
-- [ ] Tema claro/oscuro (opcional - no requerido)
+- [x] Tema claro/oscuro (switchable)
 
 ## Testing
 - [x] Tests para APIs de gastos
@@ -63,6 +63,10 @@
 - [x] Tests de autenticación y aislamiento de datos
 - [x] Tests para importación de Excel (funcional)
 - [x] Tests para categorización automática (funcional)
+
+## Nuevas Funcionalidades
+- [x] Cálculo de interés en deudas
+- [x] Campos de tasa de interés y cálculo automático
 
 ## Optimización
 - [x] Validación de datos en frontend y backend
